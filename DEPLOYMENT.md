@@ -13,9 +13,10 @@ Railway is the easiest option for full-stack deployment:
 2. **Create new project** and connect your GitHub repository
 
 3. **Configure settings:**
-   - **Build Command:** `npm run install-all && npm run build`
+   - **Build Command:** `npm install && cd client && npm install && npm run build`
    - **Start Command:** `npm start`
    - **Root Directory:** Leave empty (root)
+   - **OR** use the `railway.json` file (already configured!)
 
 4. **Add environment variables:**
    - `NODE_ENV=production`
@@ -33,9 +34,10 @@ Railway is the easiest option for full-stack deployment:
 
 3. **Configure:**
    - **Environment:** Node
-   - **Build Command:** `npm run install-all && npm run build`
+   - **Build Command:** `npm install && cd client && npm install && npm run build`
    - **Start Command:** `npm start`
    - **Plan:** Free (or paid)
+   - **OR** use the `render.yaml` file (already configured!)
 
 4. **Add environment variables:**
    - `NODE_ENV=production`
