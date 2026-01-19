@@ -36,7 +36,21 @@ const init = () => {
 
 const createTables = () => {
   return new Promise((resolve, reject) => {
-    const queries = [
+    // Execute queries sequentially to ensure tables are created before indexes
+    const runQuery = (query) => {
+      return new Promise((resolveQuery, rejectQuery) => {
+        db.run(query, (err) => {
+          if (err) {
+            rejectQuery(err);
+          } else {
+            resolveQuery();
+          }
+        });
+      });
+    };
+
+    // Create tables first
+    const tableQueries = [
       `CREATE TABLE IF NOT EXISTS expenses (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         date TEXT NOT NULL,
@@ -51,26 +65,38 @@ const createTables = () => {
         name TEXT UNIQUE NOT NULL,
         transfer_account TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )`,
+      )`
+    ];
+
+    // Create indexes after tables
+    const indexQueries = [
       `CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date)`,
       `CREATE INDEX IF NOT EXISTS idx_expenses_type ON expenses(expense_type)`
     ];
 
-    let completed = 0;
-    queries.forEach((query) => {
-      db.run(query, (err) => {
-        if (err) {
-          console.error('Error creating table:', err);
-          reject(err);
-          return;
-        }
-        completed++;
-        if (completed === queries.length) {
-          // Insert default expense types
-          insertDefaultTypes().then(resolve).catch(reject);
-        }
+    // Execute all queries sequentially
+    Promise.resolve()
+      .then(() => {
+        // Create tables
+        return tableQueries.reduce((promise, query) => {
+          return promise.then(() => runQuery(query));
+        }, Promise.resolve());
+      })
+      .then(() => {
+        // Create indexes after tables exist
+        return indexQueries.reduce((promise, query) => {
+          return promise.then(() => runQuery(query));
+        }, Promise.resolve());
+      })
+      .then(() => {
+        // Insert default expense types
+        return insertDefaultTypes();
+      })
+      .then(resolve)
+      .catch((err) => {
+        console.error('Error creating tables:', err);
+        reject(err);
       });
-    });
   });
 };
 
