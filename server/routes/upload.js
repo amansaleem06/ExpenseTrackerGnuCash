@@ -1,10 +1,18 @@
 const express = require('express');
 const multer = require('multer');
 const XLSX = require('xlsx');
+const path = require('path');
+const fs = require('fs');
 const db = require('../database/db');
 const router = express.Router();
 
-const upload = multer({ dest: 'uploads/' });
+// Ensure uploads directory exists
+const UPLOADS_DIR = path.join(__dirname, '../../uploads');
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+
+const upload = multer({ dest: UPLOADS_DIR });
 
 router.post('/excel', upload.single('file'), (req, res) => {
   if (!req.file) {

@@ -1,19 +1,34 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const fs = require('fs');
 
-const DB_PATH = path.join(__dirname, '../../data/expenses.db');
+const DATA_DIR = path.join(__dirname, '../../data');
+const DB_PATH = path.join(DATA_DIR, 'expenses.db');
 
 let db = null;
 
 const init = () => {
   return new Promise((resolve, reject) => {
+    // Ensure data directory exists
+    try {
+      if (!fs.existsSync(DATA_DIR)) {
+        fs.mkdirSync(DATA_DIR, { recursive: true });
+        console.log('Created data directory:', DATA_DIR);
+      }
+    } catch (err) {
+      console.error('Error creating data directory:', err);
+      // Continue anyway, might work in some environments
+    }
+
+    // Open database
     db = new sqlite3.Database(DB_PATH, (err) => {
       if (err) {
         console.error('Error opening database:', err);
+        console.error('Database path:', DB_PATH);
         reject(err);
         return;
       }
-      console.log('Connected to SQLite database');
+      console.log('Connected to SQLite database at:', DB_PATH);
       createTables().then(resolve).catch(reject);
     });
   });
