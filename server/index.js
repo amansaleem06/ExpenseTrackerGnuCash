@@ -20,6 +20,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/upload', uploadRoutes);
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', env: NODE_ENV, port: PORT });
+});
+
 // Serve static files from React app in production
 if (NODE_ENV === 'production') {
   console.log('Serving static files from client/build');
