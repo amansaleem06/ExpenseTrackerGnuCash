@@ -7,6 +7,9 @@ const db = require('./database/db');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const NODE_ENV = process.env.NODE_ENV || 'development';
+
+console.log(`Starting in ${NODE_ENV} mode on port ${PORT}`);
 
 // Middleware
 app.use(cors());
@@ -18,11 +21,14 @@ app.use('/api/expenses', expenseRoutes);
 app.use('/api/upload', uploadRoutes);
 
 // Serve static files from React app in production
-if (process.env.NODE_ENV === 'production') {
+if (NODE_ENV === 'production') {
+  console.log('Serving static files from client/build');
   app.use(express.static(path.join(__dirname, '../client/build')));
   app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../client/build/index.html'));
   });
+} else {
+  console.log('Development mode - not serving React build');
 }
 
 // Initialize database
