@@ -11,11 +11,14 @@ const API_URL = process.env.REACT_APP_API_URL || '/api';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [workplace, setWorkplace] = useState(() => localStorage.getItem('workplace') || null);
   const [expenses, setExpenses] = useState([]);
   const [summary, setSummary] = useState({ byType: [], byAccount: [], total: { grand_total: 0, total_count: 0 } });
   const [expenseTypes, setExpenseTypes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
+  const [exportStartDate, setExportStartDate] = useState('');
+  const [exportEndDate, setExportEndDate] = useState('');
 
   useEffect(() => {
     fetchExpenses();
@@ -123,14 +126,77 @@ function App() {
   };
 
   const handleExport = () => {
-    window.open(`${API_URL}/expenses/export/gnucash`, '_blank');
+    const params = new URLSearchParams();
+    if (workplace) params.set('workplace', workplace);
+    if (exportStartDate) params.set('start_date', exportStartDate);
+    if (exportEndDate) params.set('end_date', exportEndDate);
+
+    fetch(`${API_URL}/expenses/export/gnucash?${params.toString()}`)
+      .then(async res => {
+        if (!res.ok) throw new Error('Export failed');
+        const blob = await res.blob();
+        const disposition = res.headers.get('Content-Disposition') || '';
+        let filename = 'gnucash_export.csv';
+        const match = disposition.match(/filename="?([^";]+)"?/);
+        if (match) filename = match[1];
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      })
+      .catch(err => {
+        console.error(err);
+        alert('Export failed');
+      });
   };
+
+  const selectWorkplace = (wp) => {
+    setWorkplace(wp);
+    localStorage.setItem('workplace', wp);
+  };
+
+  const goBack = () => {
+    setWorkplace(null);
+    localStorage.removeItem('workplace');
+  };
+
+  if (!workplace) {
+    return (
+      <div className="App">
+        <div className="landing-page">
+          <div className="landing-content">
+            <h1 className="landing-title">💰 Expense Tracker</h1>
+            <p className="landing-subtitle">Select your workplace to continue</p>
+            <div className="workplace-cards">
+              <button className="workplace-card" onClick={() => selectWorkplace('Kebab 23')}>
+                <span className="workplace-icon">🥙</span>
+                <span className="workplace-name">Kebab 23</span>
+              </button>
+              <button className="workplace-card" onClick={() => selectWorkplace('Pesti Forno')}>
+                <span className="workplace-icon">🍕</span>
+                <span className="workplace-name">Pesti Forno</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="App">
       <header className="app-header">
-        <h1>💰 Expense Tracker</h1>
-        <p className="subtitle">Manage your business expenses efficiently</p>
+        <div className="header-left">
+          <button className="btn btn-secondary back-btn" onClick={goBack}>← Back</button>
+          <h1>💰 Expense Tracker</h1>
+        </div>
+        <div className="workplace-info">
+          <span className="current-workplace">{workplace}</span>
+        </div>
       </header>
 
       <nav className="nav-tabs">
@@ -167,9 +233,13 @@ function App() {
         >
           📤 Upload Excel
         </button>
-        <button onClick={handleExport} className="export-btn">
-          💾 Export CSV
-        </button>
+        <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto'}}>
+          <input type="date" value={exportStartDate} onChange={e => setExportStartDate(e.target.value)} placeholder="From" style={{height: '32px', padding: '4px'}} />
+          <input type="date" value={exportEndDate} onChange={e => setExportEndDate(e.target.value)} placeholder="To" style={{height: '32px', padding: '4px'}} />
+          <button onClick={handleExport} className="export-btn">
+            💾 Export CSV
+          </button>
+        </div>
       </nav>
 
       <main className="main-content">
