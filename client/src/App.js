@@ -6,7 +6,8 @@ import ExpenseList from './components/ExpenseList';
 import Summary from './components/Summary';
 import ExcelUpload from './components/ExcelUpload';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+// Use relative API path for production, fallback to localhost for dev
+const API_URL = process.env.REACT_APP_API_URL || '/api';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -58,11 +59,11 @@ function App() {
   const handleAddExpense = async (expense) => {
     setLoading(true);
     try {
-      const url = editingExpense 
+      const url = editingExpense
         ? `${API_URL}/expenses/${editingExpense.id}`
         : `${API_URL}/expenses`;
       const method = editingExpense ? 'PUT' : 'POST';
-      
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -88,7 +89,7 @@ function App() {
 
   const handleDeleteExpense = async (id) => {
     if (!window.confirm('Are you sure you want to delete this expense?')) return;
-    
+
     setLoading(true);
     try {
       const response = await fetch(`${API_URL}/expenses/${id}`, {
@@ -133,13 +134,13 @@ function App() {
       </header>
 
       <nav className="nav-tabs">
-        <button 
+        <button
           className={activeTab === 'dashboard' ? 'active' : ''}
           onClick={() => setActiveTab('dashboard')}
         >
           📊 Dashboard
         </button>
-        <button 
+        <button
           className={activeTab === 'add' ? 'active' : ''}
           onClick={() => {
             setEditingExpense(null);
@@ -148,19 +149,19 @@ function App() {
         >
           ➕ Add Expense
         </button>
-        <button 
+        <button
           className={activeTab === 'list' ? 'active' : ''}
           onClick={() => setActiveTab('list')}
         >
           📋 Expenses
         </button>
-        <button 
+        <button
           className={activeTab === 'summary' ? 'active' : ''}
           onClick={() => setActiveTab('summary')}
         >
           📈 Summary
         </button>
-        <button 
+        <button
           className={activeTab === 'upload' ? 'active' : ''}
           onClick={() => setActiveTab('upload')}
         >
@@ -173,18 +174,18 @@ function App() {
 
       <main className="main-content">
         {loading && <div className="loading">Loading...</div>}
-        
+
         {activeTab === 'dashboard' && (
-          <Dashboard 
+          <Dashboard
             expenses={expenses}
             summary={summary}
             onEdit={handleEditExpense}
             onDelete={handleDeleteExpense}
           />
         )}
-        
+
         {activeTab === 'add' && (
-          <ExpenseForm 
+          <ExpenseForm
             onSubmit={handleAddExpense}
             expenseTypes={expenseTypes}
             editingExpense={editingExpense}
@@ -194,21 +195,21 @@ function App() {
             }}
           />
         )}
-        
+
         {activeTab === 'list' && (
-          <ExpenseList 
+          <ExpenseList
             expenses={expenses}
             onEdit={handleEditExpense}
             onDelete={handleDeleteExpense}
           />
         )}
-        
+
         {activeTab === 'summary' && (
           <Summary summary={summary} />
         )}
-        
+
         {activeTab === 'upload' && (
-          <ExcelUpload 
+          <ExcelUpload
             onUpload={handleExcelUpload}
             apiUrl={API_URL}
           />

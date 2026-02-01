@@ -25,16 +25,13 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', env: NODE_ENV, port: PORT });
 });
 
-// Serve static files from React app in production
-if (NODE_ENV === 'production') {
-  console.log('Serving static files from client/build');
-  app.use(express.static(path.join(__dirname, '../client/build')));
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/build/index.html'));
-  });
-} else {
-  console.log('Development mode - not serving React build');
-}
+// Serve static files from React app BEFORE API routes to avoid conflicts
+app.use(express.static(path.join(__dirname, '../client/build')));
+
+// Fallback to index.html for client-side routing
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/build/index.html'));
+});
 
 // Initialize database
 db.init().then(() => {
