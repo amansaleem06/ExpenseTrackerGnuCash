@@ -1,1 +1,1 @@
-web: npm run build && NODE_ENV=production node server/index.js
+web: npm run build && node server/index.js
