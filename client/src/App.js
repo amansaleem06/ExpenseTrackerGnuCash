@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import Dashboard from './components/Dashboard';
 import ExpenseForm from './components/ExpenseForm';
@@ -26,9 +26,9 @@ function App() {
       fetchSummary();
       fetchExpenseTypes();
     }
-  }, [workplace]);
+  }, [workplace, fetchExpenses, fetchSummary, fetchExpenseTypes]);
 
-  const fetchExpenses = async () => {
+  const fetchExpenses = useCallback(async () => {
     try {
       const params = new URLSearchParams();
       if (workplace) params.append('workplace', workplace);
@@ -38,9 +38,9 @@ function App() {
     } catch (error) {
       console.error('Error fetching expenses:', error);
     }
-  };
+  }, [workplace]);
 
-  const fetchSummary = async () => {
+  const fetchSummary = useCallback(async () => {
     try {
       const params = new URLSearchParams();
       if (workplace) params.append('workplace', workplace);
@@ -53,9 +53,9 @@ function App() {
     } catch (error) {
       console.error('Error fetching summary:', error);
     }
-  };
+  }, [workplace]);
 
-  const fetchExpenseTypes = async () => {
+  const fetchExpenseTypes = useCallback(async () => {
     try {
       const response = await fetch(`${API_URL}/expenses/types/list`);
       const data = await response.json();
@@ -63,7 +63,7 @@ function App() {
     } catch (error) {
       console.error('Error fetching expense types:', error);
     }
-  };
+  }, []);
 
   const handleAddExpense = async (expense) => {
     setLoading(true);
