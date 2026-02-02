@@ -20,14 +20,6 @@ function App() {
   const [exportStartDate, setExportStartDate] = useState('');
   const [exportEndDate, setExportEndDate] = useState('');
 
-  useEffect(() => {
-    if (workplace) {
-      fetchExpenses();
-      fetchSummary();
-      fetchExpenseTypes();
-    }
-  }, [workplace, fetchExpenses, fetchSummary, fetchExpenseTypes]);
-
   const fetchExpenses = useCallback(async () => {
     try {
       const params = new URLSearchParams();
@@ -64,6 +56,14 @@ function App() {
       console.error('Error fetching expense types:', error);
     }
   }, []);
+
+  useEffect(() => {
+    if (workplace) {
+      fetchExpenses();
+      fetchSummary();
+      fetchExpenseTypes();
+    }
+  }, [workplace, fetchExpenses, fetchSummary, fetchExpenseTypes]);
 
   const handleAddExpense = async (expense) => {
     setLoading(true);
