@@ -32,6 +32,11 @@ body {
   backdrop-filter: blur(10px);
   border-radius: 15px;
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
 }
 
 .app-header h1 {
@@ -352,10 +357,119 @@ body {
   margin-top: 10px;
 }
 
+/* Landing Page Styles */
+.landing-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.landing-content {
+  text-align: center;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 60px 40px;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  max-width: 800px;
+  width: 100%;
+}
+
+.landing-title {
+  font-size: 3.5rem;
+  color: white;
+  margin-bottom: 15px;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.landing-subtitle {
+  font-size: 1.5rem;
+  color: rgba(255, 255, 255, 0.95);
+  margin-bottom: 50px;
+}
+
+.workplace-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 30px;
+  margin-top: 30px;
+}
+
+.workplace-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 15px;
+  padding: 40px 30px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  min-height: 180px;
+  justify-content: center;
+}
+
+.workplace-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+.workplace-icon {
+  font-size: 3.5rem;
+  display: block;
+}
+
+.workplace-name {
+  font-size: 1.3rem;
+  display: block;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.back-btn {
+  padding: 10px 15px !important;
+  font-size: 0.95rem;
+}
+
+.workplace-info {
+  margin-left: auto;
+}
+
+.current-workplace {
+  font-size: 1.1rem;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 8px 16px;
+  border-radius: 20px;
+  display: inline-block;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
+  .app-header {
+    flex-direction: column;
+    gap: 15px;
+  }
+
   .app-header h1 {
     font-size: 2rem;
+  }
+
+  .header-left {
+    flex-direction: column;
+    width: 100%;
   }
 
   .nav-tabs {
@@ -377,5 +491,40 @@ body {
   .expense-table th,
   .expense-table td {
     padding: 8px;
+  }
+
+  .landing-title {
+    font-size: 2.5rem;
+  }
+
+  .landing-subtitle {
+    font-size: 1.2rem;
+  }
+
+  .landing-content {
+    padding: 40px 25px;
+  }
+
+  .workplace-cards {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .workplace-card {
+    padding: 30px 20px;
+    min-height: 150px;
+  }
+
+  .workplace-icon {
+    font-size: 3rem;
+  }
+
+  .current-workplace {
+    font-size: 1rem;
+  }
+
+  .export-btn {
+    margin-left: 0 !important;
+    margin-top: 10px;
   }
 }

@@ -21,14 +21,18 @@ function App() {
   const [exportEndDate, setExportEndDate] = useState('');
 
   useEffect(() => {
-    fetchExpenses();
-    fetchSummary();
-    fetchExpenseTypes();
-  }, []);
+    if (workplace) {
+      fetchExpenses();
+      fetchSummary();
+      fetchExpenseTypes();
+    }
+  }, [workplace]);
 
   const fetchExpenses = async () => {
     try {
-      const response = await fetch(`${API_URL}/expenses`);
+      const params = new URLSearchParams();
+      if (workplace) params.append('workplace', workplace);
+      const response = await fetch(`${API_URL}/expenses?${params.toString()}`);
       const data = await response.json();
       setExpenses(data);
     } catch (error) {
@@ -38,10 +42,12 @@ function App() {
 
   const fetchSummary = async () => {
     try {
+      const params = new URLSearchParams();
+      if (workplace) params.append('workplace', workplace);
       const [byType, byAccount, total] = await Promise.all([
-        fetch(`${API_URL}/expenses/summary/by-type`).then(r => r.json()),
-        fetch(`${API_URL}/expenses/summary/by-account`).then(r => r.json()),
-        fetch(`${API_URL}/expenses/summary/total`).then(r => r.json())
+        fetch(`${API_URL}/expenses/summary/by-type?${params.toString()}`).then(r => r.json()),
+        fetch(`${API_URL}/expenses/summary/by-account?${params.toString()}`).then(r => r.json()),
+        fetch(`${API_URL}/expenses/summary/total?${params.toString()}`).then(r => r.json())
       ]);
       setSummary({ byType, byAccount, total });
     } catch (error) {
@@ -70,7 +76,7 @@ function App() {
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(expense)
+        body: JSON.stringify({ ...expense, workplace })
       });
 
       if (response.ok) {

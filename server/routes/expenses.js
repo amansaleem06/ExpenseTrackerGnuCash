@@ -4,10 +4,14 @@ const db = require('../database/db');
 
 // Get all expenses
 router.get('/', (req, res) => {
-  const { startDate, endDate, expenseType } = req.query;
+  const { startDate, endDate, expenseType, workplace } = req.query;
   let query = 'SELECT * FROM expenses WHERE 1=1';
   const params = [];
 
+  if (workplace) {
+    query += ' AND workplace = ?';
+    params.push(workplace);
+  }
   if (startDate) {
     query += ' AND date >= ?';
     params.push(startDate);
@@ -49,38 +53,38 @@ router.get('/:id', (req, res) => {
 
 // Create expense
 router.post('/', (req, res) => {
-  const { date, description, amount, account, expense_type } = req.body;
+  const { date, description, amount, account, expense_type, workplace } = req.body;
 
-  if (!date || !description || amount === undefined || !account || !expense_type) {
+  if (!date || !description || amount === undefined || !account || !expense_type || !workplace) {
     res.status(400).json({ error: 'All fields are required' });
     return;
   }
 
   db.getDb().run(
-    'INSERT INTO expenses (date, description, amount, account, expense_type) VALUES (?, ?, ?, ?, ?)',
-    [date, description, amount, account, expense_type],
+    'INSERT INTO expenses (date, description, amount, account, expense_type, workplace) VALUES (?, ?, ?, ?, ?, ?)',
+    [date, description, amount, account, expense_type, workplace],
     function(err) {
       if (err) {
         res.status(500).json({ error: err.message });
         return;
       }
-      res.json({ id: this.lastID, date, description, amount, account, expense_type });
+      res.json({ id: this.lastID, date, description, amount, account, expense_type, workplace });
     }
   );
 });
 
 // Update expense
 router.put('/:id', (req, res) => {
-  const { date, description, amount, account, expense_type } = req.body;
+  const { date, description, amount, account, expense_type, workplace } = req.body;
 
-  if (!date || !description || amount === undefined || !account || !expense_type) {
+  if (!date || !description || amount === undefined || !account || !expense_type || !workplace) {
     res.status(400).json({ error: 'All fields are required' });
     return;
   }
 
   db.getDb().run(
-    'UPDATE expenses SET date = ?, description = ?, amount = ?, account = ?, expense_type = ? WHERE id = ?',
-    [date, description, amount, account, expense_type, req.params.id],
+    'UPDATE expenses SET date = ?, description = ?, amount = ?, account = ?, expense_type = ?, workplace = ? WHERE id = ?',
+    [date, description, amount, account, expense_type, workplace, req.params.id],
     function(err) {
       if (err) {
         res.status(500).json({ error: err.message });
@@ -90,7 +94,7 @@ router.put('/:id', (req, res) => {
         res.status(404).json({ error: 'Expense not found' });
         return;
       }
-      res.json({ id: req.params.id, date, description, amount, account, expense_type });
+      res.json({ id: req.params.id, date, description, amount, account, expense_type, workplace });
     }
   );
 });
@@ -112,7 +116,7 @@ router.delete('/:id', (req, res) => {
 
 // Get expense summary by type
 router.get('/summary/by-type', (req, res) => {
-  const { startDate, endDate } = req.query;
+  const { startDate, endDate, workplace } = req.query;
   let query = `
     SELECT 
       expense_type,
@@ -123,6 +127,10 @@ router.get('/summary/by-type', (req, res) => {
   `;
   const params = [];
 
+  if (workplace) {
+    query += ' AND workplace = ?';
+    params.push(workplace);
+  }
   if (startDate) {
     query += ' AND date >= ?';
     params.push(startDate);
@@ -145,7 +153,7 @@ router.get('/summary/by-type', (req, res) => {
 
 // Get expense summary by account
 router.get('/summary/by-account', (req, res) => {
-  const { startDate, endDate } = req.query;
+  const { startDate, endDate, workplace } = req.query;
   let query = `
     SELECT 
       account,
@@ -156,6 +164,10 @@ router.get('/summary/by-account', (req, res) => {
   `;
   const params = [];
 
+  if (workplace) {
+    query += ' AND workplace = ?';
+    params.push(workplace);
+  }
   if (startDate) {
     query += ' AND date >= ?';
     params.push(startDate);
@@ -178,10 +190,14 @@ router.get('/summary/by-account', (req, res) => {
 
 // Get total summary
 router.get('/summary/total', (req, res) => {
-  const { startDate, endDate } = req.query;
+  const { startDate, endDate, workplace } = req.query;
   let query = 'SELECT SUM(amount) as grand_total, COUNT(*) as total_count FROM expenses WHERE 1=1';
   const params = [];
 
+  if (workplace) {
+    query += ' AND workplace = ?';
+    params.push(workplace);
+  }
   if (startDate) {
     query += ' AND date >= ?';
     params.push(startDate);
@@ -205,7 +221,8 @@ router.get('/summary/total', (req, res) => {
 
 // Export to CSV format for GnuCash
 router.get('/export/gnucash', (req, res) => {
-  db.getDb().all(`
+  const { workplace } = req.query;
+  let query = `
     SELECT 
       e.date,
       e.description,
@@ -220,8 +237,18 @@ router.get('/export/gnucash', (req, res) => {
       e.expense_type
     FROM expenses e
     LEFT JOIN expense_types et ON e.expense_type = et.name
-    ORDER BY e.date DESC
-  `, [], (err, rows) => {
+    WHERE 1=1
+  `;
+  const params = [];
+  
+  if (workplace) {
+    query += ' AND e.workplace = ?';
+    params.push(workplace);
+  }
+  
+  query += ' ORDER BY e.date DESC';
+  
+  db.getDb().all(query, params, (err, rows) => {
     if (err) {
       res.status(500).json({ error: err.message });
       return;

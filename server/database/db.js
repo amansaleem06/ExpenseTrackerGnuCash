@@ -58,6 +58,7 @@ const createTables = () => {
         amount REAL NOT NULL,
         account TEXT NOT NULL,
         expense_type TEXT NOT NULL,
+        workplace TEXT DEFAULT 'Kebab 23',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )`,
       `CREATE TABLE IF NOT EXISTS expense_types (
@@ -71,7 +72,13 @@ const createTables = () => {
     // Create indexes after tables
     const indexQueries = [
       `CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date)`,
-      `CREATE INDEX IF NOT EXISTS idx_expenses_type ON expenses(expense_type)`
+      `CREATE INDEX IF NOT EXISTS idx_expenses_type ON expenses(expense_type)`,
+      `CREATE INDEX IF NOT EXISTS idx_expenses_workplace ON expenses(workplace)`
+    ];
+
+    // Migration queries to add workplace column if needed
+    const migrationQueries = [
+      `ALTER TABLE expenses ADD COLUMN workplace TEXT DEFAULT 'Kebab 23'`
     ];
 
     // Execute all queries sequentially
@@ -85,7 +92,17 @@ const createTables = () => {
       .then(() => {
         // Create indexes after tables exist
         return indexQueries.reduce((promise, query) => {
-          return promise.then(() => runQuery(query));
+          return promise.then(() => runQuery(query).catch(() => {
+            // Ignore index creation errors - might already exist
+          }));
+        }, Promise.resolve());
+      })
+      .then(() => {
+        // Run migrations (add workplace column if needed)
+        return migrationQueries.reduce((promise, query) => {
+          return promise.then(() => runQuery(query).catch(() => {
+            // Ignore migration errors - column might already exist
+          }));
         }, Promise.resolve());
       })
       .then(() => {
