@@ -1,3 +1,11 @@
+// ========================================
+// Main App Component (App.js)
+// ========================================
+// Purpose: Root component managing application state and routing
+// Features: Expense CRUD, multiple tabs, workplace selection, data persistence
+// Currency: Hungarian Forint (Ft)
+// ========================================
+
 import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import Dashboard from './components/Dashboard';
@@ -6,20 +14,31 @@ import ExpenseList from './components/ExpenseList';
 import Summary from './components/Summary';
 import ExcelUpload from './components/ExcelUpload';
 
-// Use relative API path for production, fallback to localhost for dev
+// API endpoint configuration
+// Uses relative path for production builds, localhost for development
 const API_URL = process.env.REACT_APP_API_URL || '/api';
 
 function App() {
+  // Tab management: dashboard, add, list, summary, upload
   const [activeTab, setActiveTab] = useState('dashboard');
+  
+  // Workplace selection with localStorage persistence
   const [workplace, setWorkplace] = useState(() => localStorage.getItem('workplace') || null);
+  
+  // State management for expenses and summaries
   const [expenses, setExpenses] = useState([]);
   const [summary, setSummary] = useState({ byType: [], byAccount: [], total: { grand_total: 0, total_count: 0 } });
   const [expenseTypes, setExpenseTypes] = useState([]);
+  
+  // UI state
   const [loading, setLoading] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
+  
+  // Export date range filters
   const [exportStartDate, setExportStartDate] = useState('');
   const [exportEndDate, setExportEndDate] = useState('');
 
+  // Fetch expenses from API with workplace filter
   const fetchExpenses = useCallback(async () => {
     try {
       const params = new URLSearchParams();
@@ -32,6 +51,7 @@ function App() {
     }
   }, [workplace]);
 
+  // Fetch expense summaries: by type, by account, and grand total
   const fetchSummary = useCallback(async () => {
     try {
       const params = new URLSearchParams();
@@ -47,6 +67,7 @@ function App() {
     }
   }, [workplace]);
 
+  // Fetch predefined expense types for form dropdown
   const fetchExpenseTypes = useCallback(async () => {
     try {
       const response = await fetch(`${API_URL}/expenses/types/list`);
@@ -57,6 +78,7 @@ function App() {
     }
   }, []);
 
+  // Load data when workplace changes
   useEffect(() => {
     if (workplace) {
       fetchExpenses();
@@ -65,6 +87,7 @@ function App() {
     }
   }, [workplace, fetchExpenses, fetchSummary, fetchExpenseTypes]);
 
+  // Handle adding or updating expenses with data persistence
   const handleAddExpense = async (expense) => {
     setLoading(true);
     try {
@@ -80,6 +103,7 @@ function App() {
       });
 
       if (response.ok) {
+        // Refresh data after successful operation
         await fetchExpenses();
         await fetchSummary();
         setEditingExpense(null);
@@ -96,6 +120,7 @@ function App() {
     }
   };
 
+  // Handle deleting expenses with confirmation
   const handleDeleteExpense = async (id) => {
     if (!window.confirm('Are you sure you want to delete this expense?')) return;
 
@@ -106,6 +131,7 @@ function App() {
       });
 
       if (response.ok) {
+        // Refresh data after successful deletion
         await fetchExpenses();
         await fetchSummary();
       } else {
@@ -120,17 +146,20 @@ function App() {
     }
   };
 
+  // Load expense for editing
   const handleEditExpense = (expense) => {
     setEditingExpense(expense);
     setActiveTab('add');
   };
 
+  // Refresh data after Excel upload
   const handleExcelUpload = async () => {
     await fetchExpenses();
     await fetchSummary();
     await fetchExpenseTypes();
   };
 
+  // Export expenses to GnuCash CSV format
   const handleExport = () => {
     const params = new URLSearchParams();
     if (workplace) params.set('workplace', workplace);
@@ -160,16 +189,19 @@ function App() {
       });
   };
 
+  // Workplace selection handler with localStorage persistence
   const selectWorkplace = (wp) => {
     setWorkplace(wp);
     localStorage.setItem('workplace', wp);
   };
 
+  // Clear workplace selection
   const goBack = () => {
     setWorkplace(null);
     localStorage.removeItem('workplace');
   };
 
+  // Landing page when no workplace is selected
   if (!workplace) {
     return (
       <div className="App">

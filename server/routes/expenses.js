@@ -1,13 +1,24 @@
+// ========================================
+// Expense Routes & API Endpoints (expenses.js)
+// ========================================
+// Purpose: Handle all CRUD operations for expense records
+// Endpoints: GET, POST, PUT, DELETE for expense management
+// ========================================
+
 const express = require('express');
 const router = express.Router();
 const db = require('../database/db');
 
-// Get all expenses
+// GET all expenses
+// Filters by workplace, date range, and expense type
+// Returns: Array of expense records sorted by date (newest first)
 router.get('/', (req, res) => {
+  // Extract query parameters for filtering
   const { startDate, endDate, expenseType, workplace } = req.query;
   let query = 'SELECT * FROM expenses WHERE 1=1';
   const params = [];
 
+  // Build dynamic SQL query based on provided filters
   if (workplace) {
     query += ' AND workplace = ?';
     params.push(workplace);
@@ -25,8 +36,10 @@ router.get('/', (req, res) => {
     params.push(expenseType);
   }
 
+  // Sort by date descending (newest first), then by creation time
   query += ' ORDER BY date DESC, created_at DESC';
 
+  // Execute query and return results
   db.getDb().all(query, params, (err, rows) => {
     if (err) {
       res.status(500).json({ error: err.message });
@@ -36,7 +49,8 @@ router.get('/', (req, res) => {
   });
 });
 
-// Get expense by ID
+// GET single expense by ID
+// Returns: Single expense record or 404 if not found
 router.get('/:id', (req, res) => {
   db.getDb().get('SELECT * FROM expenses WHERE id = ?', [req.params.id], (err, row) => {
     if (err) {
@@ -51,15 +65,20 @@ router.get('/:id', (req, res) => {
   });
 });
 
-// Create expense
+// POST - Create new expense record
+// Validates all required fields before insertion
+// Returns: Newly created expense with auto-generated ID
+// Data is persistently stored in SQLite database
 router.post('/', (req, res) => {
   const { date, description, amount, account, expense_type, workplace } = req.body;
 
+  // Validate all required fields are present
   if (!date || !description || amount === undefined || !account || !expense_type || !workplace) {
     res.status(400).json({ error: 'All fields are required' });
     return;
   }
 
+  // Insert expense record into database with data persistence
   db.getDb().run(
     'INSERT INTO expenses (date, description, amount, account, expense_type, workplace) VALUES (?, ?, ?, ?, ?, ?)',
     [date, description, amount, account, expense_type, workplace],
@@ -68,20 +87,26 @@ router.post('/', (req, res) => {
         res.status(500).json({ error: err.message });
         return;
       }
+      // Return created record with auto-generated ID
       res.json({ id: this.lastID, date, description, amount, account, expense_type, workplace });
     }
   );
 });
 
-// Update expense
+// PUT - Update existing expense record
+// Validates all required fields before update
+// Returns: Updated expense record or 404 if not found
+// Changes are persistently saved to database
 router.put('/:id', (req, res) => {
   const { date, description, amount, account, expense_type, workplace } = req.body;
 
+  // Validate all required fields are present
   if (!date || !description || amount === undefined || !account || !expense_type || !workplace) {
     res.status(400).json({ error: 'All fields are required' });
     return;
   }
 
+  // Update expense record in database with data persistence
   db.getDb().run(
     'UPDATE expenses SET date = ?, description = ?, amount = ?, account = ?, expense_type = ?, workplace = ? WHERE id = ?',
     [date, description, amount, account, expense_type, workplace, req.params.id],
@@ -99,7 +124,9 @@ router.put('/:id', (req, res) => {
   );
 });
 
-// Delete expense
+// DELETE - Remove expense record from database permanently
+// Returns: Success message or 404 if not found
+// Data deletion is permanent and will be removed from persistent storage
 router.delete('/:id', (req, res) => {
   db.getDb().run('DELETE FROM expenses WHERE id = ?', [req.params.id], function(err) {
     if (err) {
@@ -114,7 +141,8 @@ router.delete('/:id', (req, res) => {
   });
 });
 
-// Get expense summary by type
+// GET - Expense summary grouped by type
+// Returns: Array of types with total amount and count
 router.get('/summary/by-type', (req, res) => {
   const { startDate, endDate, workplace } = req.query;
   let query = `
@@ -151,7 +179,8 @@ router.get('/summary/by-type', (req, res) => {
   });
 });
 
-// Get expense summary by account
+// GET - Expense summary grouped by account (Cash, Card, etc.)
+// Returns: Array of accounts with total amount and count
 router.get('/summary/by-account', (req, res) => {
   const { startDate, endDate, workplace } = req.query;
   let query = `
@@ -188,7 +217,8 @@ router.get('/summary/by-account', (req, res) => {
   });
 });
 
-// Get total summary
+// GET - Grand total summary across all expenses
+// Returns: Total sum and count of all expenses
 router.get('/summary/total', (req, res) => {
   const { startDate, endDate, workplace } = req.query;
   let query = 'SELECT SUM(amount) as grand_total, COUNT(*) as total_count FROM expenses WHERE 1=1';
@@ -219,7 +249,9 @@ router.get('/summary/total', (req, res) => {
   });
 });
 
-// Export to CSV format for GnuCash
+// GET - Export expenses to CSV format for GnuCash accounting software
+// Includes automatic transfer account mapping from expense types
+// Returns: CSV file download with expense data
 router.get('/export/gnucash', (req, res) => {
   const { workplace } = req.query;
   let query = `
@@ -254,7 +286,7 @@ router.get('/export/gnucash', (req, res) => {
       return;
     }
 
-    // Convert to CSV
+    // Convert expense data to CSV format with proper escaping
     const headers = ['Date', 'Description', 'Amount', 'Transfer Account', 'Expense Type'];
     const csvRows = [headers.join(',')];
     
@@ -269,13 +301,15 @@ router.get('/export/gnucash', (req, res) => {
       csvRows.push(values.join(','));
     });
 
+    // Send CSV file as download attachment
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename=gnucash_export.csv');
     res.send(csvRows.join('\n'));
   });
 });
 
-// Get expense types
+// GET - Fetch all available expense types
+// Returns: Array of expense type records from database
 router.get('/types/list', (req, res) => {
   db.getDb().all('SELECT * FROM expense_types ORDER BY name', [], (err, rows) => {
     if (err) {

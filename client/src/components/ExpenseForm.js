@@ -1,6 +1,14 @@
+// ========================================
+// Expense Form Component
+// ========================================
+// Purpose: Form for creating and editing expense records
+// Features: Date input, description, amount, account selection, expense type dropdown
+// ========================================
+
 import React, { useState, useEffect } from 'react';
 
 const ExpenseForm = ({ onSubmit, expenseTypes, editingExpense, onCancel }) => {
+  // Initialize form with today's date and default values
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     description: '',
@@ -9,6 +17,7 @@ const ExpenseForm = ({ onSubmit, expenseTypes, editingExpense, onCancel }) => {
     expense_type: expenseTypes[0] || 'Other Expenses'
   });
 
+  // Load existing expense data when editing
   useEffect(() => {
     if (editingExpense) {
       setFormData({
@@ -21,6 +30,7 @@ const ExpenseForm = ({ onSubmit, expenseTypes, editingExpense, onCancel }) => {
     }
   }, [editingExpense]);
 
+  // Handle form field changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -29,16 +39,20 @@ const ExpenseForm = ({ onSubmit, expenseTypes, editingExpense, onCancel }) => {
     }));
   };
 
+  // Handle form submission for creating or updating expenses
   const handleSubmit = (e) => {
     e.preventDefault();
+    // Validate required fields
     if (!formData.date || !formData.description || !formData.amount) {
       alert('Please fill in all required fields');
       return;
     }
+    // Submit form data and convert amount to number
     onSubmit({
       ...formData,
       amount: parseFloat(formData.amount)
     });
+    // Reset form if creating new expense (not editing)
     if (!editingExpense) {
       setFormData({
         date: new Date().toISOString().split('T')[0],
@@ -54,6 +68,7 @@ const ExpenseForm = ({ onSubmit, expenseTypes, editingExpense, onCancel }) => {
     <div className="expense-form">
       <h2>{editingExpense ? 'Edit Expense' : 'Add New Expense'}</h2>
       <form onSubmit={handleSubmit}>
+        {/* Date field */}
         <div className="form-group">
           <label htmlFor="date">Date *</label>
           <input
@@ -66,6 +81,7 @@ const ExpenseForm = ({ onSubmit, expenseTypes, editingExpense, onCancel }) => {
           />
         </div>
 
+        {/* Description field */}
         <div className="form-group">
           <label htmlFor="description">Description *</label>
           <input
@@ -79,8 +95,9 @@ const ExpenseForm = ({ onSubmit, expenseTypes, editingExpense, onCancel }) => {
           />
         </div>
 
+        {/* Amount field - converted to Hungarian Forint */}
         <div className="form-group">
-          <label htmlFor="amount">Amount *</label>
+          <label htmlFor="amount">Amount (Ft) *</label>
           <input
             type="number"
             id="amount"
@@ -94,6 +111,7 @@ const ExpenseForm = ({ onSubmit, expenseTypes, editingExpense, onCancel }) => {
           />
         </div>
 
+        {/* Account selection (Cash or Card) */}
         <div className="form-group">
           <label htmlFor="account">Account *</label>
           <select
@@ -108,6 +126,7 @@ const ExpenseForm = ({ onSubmit, expenseTypes, editingExpense, onCancel }) => {
           </select>
         </div>
 
+        {/* Expense type dropdown - fetched from database */}
         <div className="form-group">
           <label htmlFor="expense_type">Expense Type *</label>
           <select
@@ -123,6 +142,7 @@ const ExpenseForm = ({ onSubmit, expenseTypes, editingExpense, onCancel }) => {
           </select>
         </div>
 
+        {/* Form action buttons */}
         <div className="form-actions">
           <button type="submit" className="btn btn-primary">
             {editingExpense ? 'Update Expense' : 'Add Expense'}

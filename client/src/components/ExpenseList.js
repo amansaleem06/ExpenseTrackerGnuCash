@@ -1,8 +1,22 @@
+// ========================================
+// Expense List Component
+// ========================================
+// Purpose: Display all expenses in a table format with edit/delete actions
+// Currency: Hungarian Forint (Ft)
+// ========================================
+
 import React from 'react';
+
+// Format currency values to Hungarian Forint
+// Uses Ft symbol after the amount with 2 decimal places
+const formatCurrency = (amount) => {
+  return `${parseFloat(amount).toFixed(2)} Ft`;
+};
 
 const ExpenseList = ({ expenses, onEdit, onDelete, showAll = true }) => {
   const displayExpenses = showAll ? expenses : expenses;
 
+  // Format date to readable format (e.g., "Jan 15, 2024")
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -34,7 +48,7 @@ const ExpenseList = ({ expenses, onEdit, onDelete, showAll = true }) => {
             <tr key={expense.id}>
               <td>{formatDate(expense.date)}</td>
               <td>{expense.description}</td>
-              <td>${parseFloat(expense.amount).toFixed(2)}</td>
+              <td>{formatCurrency(expense.amount)}</td>
               <td>{expense.account}</td>
               <td>{expense.expense_type}</td>
               <td>

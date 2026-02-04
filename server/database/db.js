@@ -1,15 +1,26 @@
+// ========================================
+// Database Configuration & Management (db.js)
+// ========================================
+// Purpose: Initialize SQLite database, create tables, and manage database connections
+// Handles: Table creation, migrations, default data insertion, and connection pooling
+// ========================================
+
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
 
+// Set database storage location in data/ directory
 const DATA_DIR = path.join(__dirname, '../../data');
 const DB_PATH = path.join(DATA_DIR, 'expenses.db');
 
 let db = null;
 
+// Initialize database connection
+// Creates data directory if it doesn't exist and opens SQLite connection
+// Ensures database is ready for queries before returning
 const init = () => {
   return new Promise((resolve, reject) => {
-    // Ensure data directory exists
+    // Ensure data directory exists for database file storage
     try {
       if (!fs.existsSync(DATA_DIR)) {
         fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -20,7 +31,7 @@ const init = () => {
       // Continue anyway, might work in some environments
     }
 
-    // Open database
+    // Open database connection - creates file if it doesn't exist
     db = new sqlite3.Database(DB_PATH, (err) => {
       if (err) {
         console.error('Error opening database:', err);
@@ -34,9 +45,12 @@ const init = () => {
   });
 };
 
+// Create all database tables with proper structure
+// Handles: Table creation, index creation, and schema migrations
+// Ensures data persistence by creating normalized database schema
 const createTables = () => {
   return new Promise((resolve, reject) => {
-    // Execute queries sequentially to ensure tables are created before indexes
+    // Helper function to execute SQL queries sequentially
     const runQuery = (query) => {
       return new Promise((resolveQuery, rejectQuery) => {
         db.run(query, (err) => {
@@ -49,8 +63,9 @@ const createTables = () => {
       });
     };
 
-    // Create tables first
+    // Main tables for expense tracking
     const tableQueries = [
+      // Expenses table: stores individual expense records
       `CREATE TABLE IF NOT EXISTS expenses (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         date TEXT NOT NULL,
@@ -61,6 +76,7 @@ const createTables = () => {
         workplace TEXT DEFAULT 'Kebab 23',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )`,
+      // Expense types lookup table: predefined categories for expenses
       `CREATE TABLE IF NOT EXISTS expense_types (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT UNIQUE NOT NULL,
@@ -69,22 +85,22 @@ const createTables = () => {
       )`
     ];
 
-    // Create indexes after tables
+    // Create indexes for faster queries on frequently searched columns
     const indexQueries = [
       `CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date)`,
       `CREATE INDEX IF NOT EXISTS idx_expenses_type ON expenses(expense_type)`,
       `CREATE INDEX IF NOT EXISTS idx_expenses_workplace ON expenses(workplace)`
     ];
 
-    // Migration queries to add workplace column if needed
+    // Migration queries to update existing database schema
     const migrationQueries = [
       `ALTER TABLE expenses ADD COLUMN workplace TEXT DEFAULT 'Kebab 23'`
     ];
 
-    // Execute all queries sequentially
+    // Execute all queries sequentially to ensure proper table creation
     Promise.resolve()
       .then(() => {
-        // Create tables
+        // Create main tables first
         return tableQueries.reduce((promise, query) => {
           return promise.then(() => runQuery(query));
         }, Promise.resolve());
@@ -98,7 +114,7 @@ const createTables = () => {
         }, Promise.resolve());
       })
       .then(() => {
-        // Run migrations (add workplace column if needed)
+        // Run migrations (add new columns if needed)
         return migrationQueries.reduce((promise, query) => {
           return promise.then(() => runQuery(query).catch(() => {
             // Ignore migration errors - column might already exist
@@ -106,7 +122,7 @@ const createTables = () => {
         }, Promise.resolve());
       })
       .then(() => {
-        // Insert default expense types
+        // Insert default expense types after tables are created
         return insertDefaultTypes();
       })
       .then(resolve)
@@ -117,6 +133,9 @@ const createTables = () => {
   });
 };
 
+// Insert predefined expense type categories into database
+// These categories are used for filtering and organizing expenses
+// Only inserts if they don't already exist (using INSERT OR IGNORE)
 const insertDefaultTypes = () => {
   return new Promise((resolve, reject) => {
     const defaultTypes = [
@@ -130,15 +149,18 @@ const insertDefaultTypes = () => {
       { name: 'Ingridients', transfer_account: 'Assets:Card' }
     ];
 
+    // Prepare insert statement for data persistence
     const stmt = db.prepare('INSERT OR IGNORE INTO expense_types (name, transfer_account) VALUES (?, ?)');
     let completed = 0;
 
+    // Insert each default type and track completion
     defaultTypes.forEach((type) => {
       stmt.run([type.name, type.transfer_account], (err) => {
         if (err) {
           console.error('Error inserting default type:', err);
         }
         completed++;
+        // Finalize statement after all inserts complete
         if (completed === defaultTypes.length) {
           stmt.finalize();
           resolve();
@@ -148,6 +170,8 @@ const insertDefaultTypes = () => {
   });
 };
 
+// Retrieve database connection instance
+// Throws error if database hasn't been initialized yet
 const getDb = () => {
   if (!db) {
     throw new Error('Database not initialized');
@@ -155,6 +179,8 @@ const getDb = () => {
   return db;
 };
 
+// Close database connection gracefully
+// Used on server shutdown to ensure data is properly committed
 const close = () => {
   return new Promise((resolve, reject) => {
     if (db) {

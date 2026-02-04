@@ -1,21 +1,33 @@
+// ========================================
+// Excel Upload Component
+// ========================================
+// Purpose: Allow users to upload and import expenses from Excel files
+// Features: File validation, progress feedback, and data persistence
+// ========================================
+
 import React, { useState } from 'react';
 
+// Component for uploading Excel files with expense data
+// Supports: Date, Description, Amount, Account, Expense Type columns
 const ExcelUpload = ({ onUpload, apiUrl }) => {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState(null);
 
+  // Handle file selection and clear previous results
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
     setResult(null);
   };
 
+  // Upload Excel file to server for data import and persistence
   const handleUpload = async () => {
     if (!file) {
       alert('Please select a file first');
       return;
     }
 
+    // Create FormData for file upload
     const formData = new FormData();
     formData.append('file', file);
 
@@ -23,6 +35,7 @@ const ExcelUpload = ({ onUpload, apiUrl }) => {
     setResult(null);
 
     try {
+      // Send file to backend for processing
       const response = await fetch(`${apiUrl}/upload/excel`, {
         method: 'POST',
         body: formData
@@ -31,6 +44,7 @@ const ExcelUpload = ({ onUpload, apiUrl }) => {
       const data = await response.json();
       setResult(data);
       
+      // Refresh data if expenses were successfully imported
       if (data.imported > 0) {
         onUpload();
       }
@@ -49,6 +63,7 @@ const ExcelUpload = ({ onUpload, apiUrl }) => {
         Upload your Excel file to import expenses. The file should have columns: Date, Description, Amount, Account, and Expense Type.
       </p>
 
+      {/* File upload area with click-to-select functionality */}
       <div className="upload-area" onClick={() => document.getElementById('file-input').click()}>
         <input
           type="file"
@@ -64,6 +79,7 @@ const ExcelUpload = ({ onUpload, apiUrl }) => {
         </div>
       </div>
 
+      {/* Upload button shown when file is selected */}
       {file && (
         <button 
           className="btn btn-primary" 
@@ -75,6 +91,7 @@ const ExcelUpload = ({ onUpload, apiUrl }) => {
         </button>
       )}
 
+      {/* Display upload results: success or error messages */}
       {result && (
         <div style={{
           marginTop: '30px',
